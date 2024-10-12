@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envíos de Puerta a Puerta</title>
+    <link rel="stylesheet" href="enviopuertaxpuerta.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+
+<section class="presentacion">
+    <h2>¿Por qué elegir nuestros servicios?</h2>
+    <ul>
+        <li><strong>Rapidez</strong>: Realizamos envíos en el menor tiempo posible, asegurando que tus paquetes lleguen a su destino de manera eficiente.</li>
+        <li><strong>Precio competitivo</strong>: Con una tarifa de $800 por kilómetro, ofrecemos un servicio de calidad a precios accesibles.</li>
+        <li><strong>Seguridad</strong>: Garantizamos la integridad de tus productos durante el envío, con rastreo en tiempo real.</li>
+        <li><strong>Atención personalizada</strong>: Cada cliente es especial para nosotros, y adaptamos nuestros servicios a tus necesidades.</li>
+        <li><strong>Cobertura amplia</strong>: Llegamos a cualquier lugar que necesites, conectando destinos urbanos y rurales sin complicaciones.</li>
+    </ul>
+</section>
+
+<header>
+    <h1>Envíos de Puerta a Puerta</h1>
+    <p>Solicita tu viaje y calculamos el precio por ti</p>
+</header>
+
+<main>
+    <h2>Formulario de solicitud de envío</h2>
+    <form id="envioForm">
+        <input type="text" id="puntoRecoleccion" placeholder="Dirección de origen" required><br>
+        <input type="text" id="puntoEntrega" placeholder="Dirección de destino" required><br>
+        <button type="button" onclick="calcularRuta()">Calcular costo del viaje</button>
+    </form>
+
+    <div id="result"></div>
+    
+    <!-- Mapa Leaflet -->
+    <div id="map" style="height: 400px;"></div>
+</main>
+
+<!-- Scripts Leaflet y GraphHopper -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    // Inicializar el mapa
+    var map = L.map('map').setView([-34.61, -58.38], 10); // Ubicación inicial en Buenos Aires
+
+    // Añadir los tiles de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Función para geocodificar direcciones
+    function geocodificar(direccion, callback) {
+        fetch(`https://api.locationiq.com/v1/search.php?key=pk.7dec61415cbb4099944bd3558fdddbfd&format=json&q=${direccion}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const location = { lat: data[0].lat, lng: data[0].lon };
+                    callback(location);
+                } else {
+                    alert('No se encontró la dirección: ' + direccion);
+                }
+            })
+            .catch(error => {
+                console.error('Error en la geocodificación:', error);
+                alert('Ocurrió un error al geocodificar. Intenta nuevamente.');
+            });
+    }
+
+    // Función para calcular la ruta
+    function calcularRuta() {
+        const puntoRecoleccion = document.getElementById('puntoRecoleccion').value;
+        const puntoEntrega = document.getElementById('puntoEntrega').value;
+        
+        if (!puntoRecoleccion || !puntoEntrega) {
+            alert('Por favor, introduce tanto el Punto de Recolección como el Punto de Entrega.');
+            return;
+        }
+
+        // Limpiar el mapa de rutas anteriores
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.Polyline) {
+                map.removeLayer(layer);
+            }
+        });
+
+        // Geocodificar el punto de recolección
+        geocodificar(puntoRecoleccion, function(coordenadasRecoleccion) {
+            // Geocodificar el punto de entrega
+            geocodificar(puntoEntrega, function(coordenadasEntrega) {
+                // Usar GraphHopper para calcular la ruta
+                const url = `https://graphhopper.com/api/1/route?point=${coordenadasRecoleccion.lat},${coordenadasRecoleccion.lng}&point=${coordenadasEntrega.lat},${coordenadasEntrega.lng}&vehicle=car&key=78911c4e-c64f-4a54-987b-2ed28007cbb4`;
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.paths && data.paths.length > 0) {
+                            const route = data.paths[0];
+                            const distance = route.distance / 1000; // Convertir metros a kilómetros
+                            const costoPorKm = 800;
+                            const costoTotal = distance * costoPorKm;
+
+                            // Dibujar la ruta en el mapa
+                            const latlngs = route.points.coordinates.map(coord => [coord[1], coord[0]]);
+                            const polyline = L.polyline(latlngs, { color: 'blue' }).addTo(map);
+                            map.fitBounds(polyline.getBounds());
+
+                            // Mostrar la distancia y el costo
+                            document.getElementById('result').innerHTML = 
+                                `<p>Distancia: ${distance.toFixed(2)} km</p>
+                                 <p>Costo total: $${costoTotal.toFixed(2)}</p>`;
+                        } else {
+                            alert('No se pudo calcular la ruta.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al calcular la ruta:', error);
+                        alert('Ocurrió un error al calcular la ruta. Verifica los puntos ingresados.');
+                    });
+            });
+        });
+    }
+</script>
+
+</body>
+</html>

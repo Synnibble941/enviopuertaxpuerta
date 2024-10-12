@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envíos de Puerta a Puerta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+            text-align: center;
+        }
+        input[type=text], input[type=number] {
+            width: 80%;
+            padding: 10px;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+        .presentacion {
+            background-color: #fff;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            text-align: left;
+        }
+        .presentacion h2 {
+            color: #333;
+        }
+        .presentacion ul {
+            list-style-type: disc;
+            padding-left: 40px;
+        }
+        .presentacion ul li {
+            margin: 10px 0;
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+</head>
+
+<body>
+    <section class="presentacion">
+        <h2>¿Por qué elegir nuestros servicios?</h2>
+        <ul>
+            <li><strong>Rapidez</strong>: Realizamos envíos en el menor tiempo posible, asegurando que tus paquetes lleguen a su destino de manera eficiente.</li>
+            <li><strong>Precio competitivo</strong>: Con una tarifa de $800 por kilómetro, ofrecemos un servicio de calidad a precios accesibles.</li>
+            <li><strong>Seguridad</strong>: Garantizamos la integridad de tus productos durante el envío, con rastreo en tiempo real.</li>
+            <li><strong>Atención personalizada</strong>: Cada cliente es especial para nosotros, y adaptamos nuestros servicios a tus necesidades.</li>
+            <li><strong>Cobertura amplia</strong>: Llegamos a cualquier lugar que necesites, conectando destinos urbanos y rurales sin complicaciones.</li>
+        </ul>
+    </section>
+
+    <header>
+    <h1>Envíos de Puerta a Puerta</h1>
+    <p>Solicita tu viaje y calculamos el precio por ti</p>
+    
+</header>
+
+<main>
+    <h2>Formulario de solicitud de envío</h2>
+    <form id="envioForm">
+        <input type="text" id="origen" placeholder="Dirección de origen" required><br>
+        <input type="text" id="destino" placeholder="Dirección de destino" required><br>
+        <button type="button" onclick="calcularCosto()">Calcular costo del viaje</button>
+    </form>
+
+    <div id="result"></div>
+</main>
+
+<script>
+    var service = new google.maps.DistanceMatrixService();
+
+    function calcularCosto() {
+        var origen = document.getElementById('origen').value;
+        var destino = document.getElementById('destino').value;
+
+        if (origen && destino) {
+            service.getDistanceMatrix({
+                origins: [origen],
+                destinations: [destino],
+                travelMode: 'DRIVING',
+                unitSystem: google.maps.UnitSystem.METRIC
+            }, function(response, status) {
+                if (status === 'OK') {
+                    var distancia = response.rows[0].elements[0].distance.value / 1000; // Convertir metros a km
+                    var costoPorKm = 800;
+                    var costoTotal = distancia * costoPorKm;
+
+                    document.getElementById('result').innerHTML = 
+                        'Distancia: ' + distancia.toFixed(2) + ' km<br>' +
+                        'Costo total: $' + costoTotal.toFixed(2);
+                } else {
+                    alert('No se pudo calcular la distancia. Por favor verifica las direcciones.');
+                }
+            });
+        } else {
+            alert('Por favor ingresa las direcciones de origen y destino.');
+        }
+    }
+</script>
+
+</body>
+</html>
